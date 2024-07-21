@@ -2,6 +2,9 @@
 #include <stdio.h>
 
 #define OPTIONS_HEIGHT 2
+#define SITES_ARRAY_DEFINITION { "A", "B", "C", "Other" }
+
+const char* SITES_ARRAY[] = SITES_ARRAY_DEFINITION;
 typedef int (*FuncPtr)(int, int, UINT8);
 
 // Mover el cursor a una posición específica en la consola
@@ -13,7 +16,7 @@ void movePointer(int x, int y) {
 }
 
 // Imprimir el menú
-void printMenu(char** directories, UINT8 count) {
+void printMap(char** directories, UINT8 count) {
     movePointer(0, 0);
     printf("Click on a map to create a new lineup:");
 
@@ -23,15 +26,6 @@ void printMenu(char** directories, UINT8 count) {
     }
     movePointer(0, count + OPTIONS_HEIGHT + 1);
     printf("* Note: To get more maps, create a new folder with the name of the map.");
-}
-
-int handleMenu(int x, int y, UINT8 count) {
-    for (UINT8 i = 0; i < count; i++) {
-        if (x >= 0 && x <= 30 && y == i + OPTIONS_HEIGHT) {
-            return i;
-        }
-    }
-    return -1;
 }
 
 void printSite() {
@@ -47,7 +41,16 @@ void printSite() {
     printf("4. Other");
 }
 
-int clickHandler(HANDLE hStdin, INPUT_RECORD* irInBuf, DWORD cNumRead, FuncPtr callback, UINT8 count) {
+int handleClick(int x, int y, UINT8 count) {
+    for (UINT8 i = 0; i < count; i++) {
+        if (x >= 0 && x <= 30 && y == i + OPTIONS_HEIGHT) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+int clickHandler(HANDLE hStdin, INPUT_RECORD* irInBuf, DWORD cNumRead, UINT8 count) {
     while (1) {
         // Esperar a que ocurra un evento en la consola
         if (!ReadConsoleInput(hStdin, irInBuf, 128, &cNumRead)) {
@@ -65,12 +68,12 @@ int clickHandler(HANDLE hStdin, INPUT_RECORD* irInBuf, DWORD cNumRead, FuncPtr c
                     int x = mer.dwMousePosition.X;
                     int y = mer.dwMousePosition.Y;
 
-                    movePointer(0, 10);
-                    printf("Clic detectado en (%d, %d)", x, y);
-
-                    // Aquí puedes manejar los clics según las coordenadas
-                    int option = callback(x, y, count);
-                    if (option >= 0) return option;
+                    int option = handleClick(x, y, count);
+                    if (option >= 0) {
+                        Sleep(100);
+                        FlushConsoleInputBuffer(hStdin);
+                        return option;
+                    }
                 }
             }
         }

@@ -10,6 +10,7 @@ int main() {
     UINT8 directoryCount = 0;
     char** directories = listDirectories(".", &directoryCount);
     UINT8 selectedMapIndex = -1;
+    UINT8 selectedSiteIndex = -1;
 
     SetConsoleOutputCP(CP_UTF8); // Habilitar la escritura de caracteres UTF-8
 
@@ -35,13 +36,15 @@ int main() {
 
     // Menú de selección de mapa
     clearConsole();
-    printMenu(directories, directoryCount);
-    selectedMapIndex = clickHandler(hStdin, irInBuf, cNumRead, handleMenu, directoryCount);
+    printMap(directories, directoryCount);
+    selectedMapIndex = clickHandler(hStdin, irInBuf, cNumRead, directoryCount);
     if (selectedMapIndex < 0) { printf("Error handling click\n"); return 1; }
 
     // Selección de site
     clearConsole();
     printSite();
+    selectedSiteIndex = clickHandler(hStdin, irInBuf, cNumRead, 4);
+    if (selectedSiteIndex < 0) { printf("Error handling click\n"); return 1; }
 
     SetConsoleMode(hStdin, fdwSaveOldMode); // Restaurar el modo de entrada original antes de salir
     for (int i = 0; i < directoryCount; i++) free(directories[i]);
@@ -55,7 +58,7 @@ int main() {
  * - [X] Detectar qué carpetas existen en el directorio actual para mostrarlas como opciones en el menú
  * - [ ] Si se detecta más de un monitor, se debe preguntar cuál es el monitor que se está utilizando para el Valorant (esto se pregunta al principio del programa y se guardará en un archivo de configuración)
  * - [X] Al seleccionar un mapa, se debe guardar qué se seleccionó
- * - [ ] Después de escoger un mapa, se debe elegir en qué parte del mapa se realizará el lineup (A, B, C u Other)
+ * - [X] Después de escoger un mapa, se debe elegir en qué parte del mapa se realizará el lineup (A, B, C u Other)
  * - [ ] Si no está guardado en la config, se debe preguntar al usuario qué tecla utilizar para realizar la captura de pantalla y se guarda posteriormente en el archivo de configuración
  * - [ ] Una vez seleccionado el mapa y la parte, se pedirá al usuario que saque tres capturas de pantalla
  *       - [ ] La primera captura será mirar hacia dónde hay que colocarse
