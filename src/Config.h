@@ -39,7 +39,7 @@ void saveConfig(const Config* config) {
         printf("Cannot open config file in write mode\n");
         return;
     }
-
     fprintf(file, "vkCode=%d\n", config->vkCode);
+    
     fclose(file);
 }

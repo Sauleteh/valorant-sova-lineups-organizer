@@ -49,23 +49,46 @@ void saveBitmapToFile(HBITMAP hBitmap, HDC hDC, int width, int height, const cha
     bfHeader.bfReserved2 = 0;
     bfHeader.bfOffBits = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);
 
-    // Write the file header
-    WriteFile(hFile, &bfHeader, sizeof(BITMAPFILEHEADER), &dwBytesWritten, NULL);
+    WriteFile(hFile, &bfHeader, sizeof(BITMAPFILEHEADER), &dwBytesWritten, NULL); // Write the file header
+    WriteFile(hFile, &bInfo.bmiHeader, sizeof(BITMAPINFOHEADER), &dwBytesWritten, NULL); // Write the info header
+    WriteFile(hFile, pBitmapBits, rowSize * height, &dwBytesWritten, NULL); // Write the bitmap bits
 
-    // Write the info header
-    WriteFile(hFile, &bInfo.bmiHeader, sizeof(BITMAPINFOHEADER), &dwBytesWritten, NULL);
-
-    // Write the bitmap bits
-    WriteFile(hFile, pBitmapBits, rowSize * height, &dwBytesWritten, NULL);
-
-    // Clean up
     SelectObject(hMemDC, hOldBitmap);
     DeleteDC(hMemDC);
     CloseHandle(hFile);
     free(pBitmapBits);
 }
 
-void makeScreenshot() {
+void generateFinalImage(HBITMAP firstScreenshot, HBITMAP secondScreenshot, HBITMAP thirdScreenshot, const char* map, const char* site, const int fileNumber) {
+    // Create a new bitmap
+    HDC hDC = GetDC(NULL);
+    HDC hMemDC = CreateCompatibleDC(hDC);
+    HDC hMemDCScreenshots = CreateCompatibleDC(hDC);
+    int width = GetDeviceCaps(hDC, HORZRES);
+    int height = GetDeviceCaps(hDC, VERTRES);
+    HBITMAP hFinalBitmap = CreateCompatibleBitmap(hDC, width, height);
+    SelectObject(hMemDC, hFinalBitmap);
+
+    // Draw the bitmaps
+    SelectObject(hMemDCScreenshots, firstScreenshot);
+    BitBlt(hMemDC, 0, 0, width/3, height, hMemDCScreenshots, width/2 - width/3/2, 0, SRCCOPY);
+    SelectObject(hMemDCScreenshots, secondScreenshot);
+    BitBlt(hMemDC, width/3, 0, width/3*2, height, hMemDCScreenshots, width/2 - width/3/2, 0, SRCCOPY);
+    SelectObject(hMemDCScreenshots, thirdScreenshot);
+    BitBlt(hMemDC, width/3*2, 0, width, height, hMemDCScreenshots, width/2 - width/3/2, 0, SRCCOPY);
+
+    // Save the final image
+    char filename[256];
+    sprintf(filename, "%s\\%s_%03d.bmp", map, site, fileNumber);
+    saveBitmapToFile(hFinalBitmap, hDC, width, height, filename);
+
+    DeleteDC(hMemDCScreenshots);
+    DeleteDC(hMemDC);
+    ReleaseDC(NULL, hDC);
+    DeleteObject(hFinalBitmap);
+}
+
+HBITMAP makeScreenshot() {
     HDC hScreenDC, hMemoryDC;
     HBITMAP hBitmap;
     int width, height;
@@ -84,13 +107,8 @@ void makeScreenshot() {
     // Copy the screen to the bitmap
     BitBlt(hMemoryDC, 0, 0, width, height, hScreenDC, 0, 0, SRCCOPY);
 
-    // Save the bitmap to a file
-    saveBitmapToFile(hBitmap, hScreenDC, width, height, "screenshot.bmp");
-
-    // Clean up
-    DeleteObject(hBitmap);
     DeleteDC(hMemoryDC);
     ReleaseDC(NULL, hScreenDC);
 
-    printf("Screenshot saved as screenshot.bmp\n");
+    return hBitmap;
 }

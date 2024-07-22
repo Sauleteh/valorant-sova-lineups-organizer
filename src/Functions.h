@@ -45,6 +45,23 @@ void printSite() {
 void printPressKey() {
     movePointer(0, 0);
     printf("Press the key you want to use to take a screenshot");
+    movePointer(0, 2);
+    printf("* Note: This will be requested only this time, the key will be saved in the configuration file.");
+}
+
+void printFirstScreenshot() {
+    movePointer(0, 0);
+    printf("Go to Valorant and press the key you have chosen to take a screenshot of the place where you want the player to stand");
+}
+
+void printSecondScreenshot() {
+    movePointer(0, 0);
+    printf("Go to Valorant and press the key you have chosen to take a screenshot of the place where the player should aim (set up the bounce and power too)");
+}
+
+void printThirdScreenshot() {
+    movePointer(0, 0);
+    printf("Go to Valorant and press the key you have chosen to take a screenshot of the place where the arrow should land");
 }
 
 //! Función interna
@@ -110,12 +127,13 @@ void clearConsole() {
     SetConsoleCursorPosition(hConsole, homeCoords);
 }
 
-char** listDirectories(const char* path, UINT8* count) {
+// Si solo se desea filtrar los directorios, se debe pasar el valor 1 en el parámetro filterOnlyDirectories, 0 en caso contrario
+char** listFiles(const char* path, UINT8* count, UINT8 filterOnlyDirectories) {
     WIN32_FIND_DATA findFileData;
     HANDLE hFind = INVALID_HANDLE_VALUE;
     char dirSpec[MAX_PATH];
-    char** directories = NULL;
-    int dirCount = 0;
+    char** files = NULL;
+    int fileCount = 0;
 
     // Construir el path para buscar
     snprintf(dirSpec, MAX_PATH, "%s\\*", path);
@@ -132,30 +150,30 @@ char** listDirectories(const char* path, UINT8* count) {
     // Iterar sobre todos los archivos y directorios encontrados
     do {
         // Filtrar sólo los directorios
-        if (findFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
+        if (findFileData.dwFileAttributes & (filterOnlyDirectories == 1 ? FILE_ATTRIBUTE_DIRECTORY : 255)) {
             if (strcmp(findFileData.cFileName, ".") != 0 && strcmp(findFileData.cFileName, "..") != 0) {
                 // Reallocar el arreglo de strings
-                directories = realloc(directories, sizeof(char*) * (dirCount + 1));
-                if (directories == NULL) {
+                files = realloc(files, sizeof(char*) * (fileCount + 1));
+                if (files == NULL) {
                     printf("Error locating memory\n");
                     FindClose(hFind);
                     *count = 0;
                     return NULL;
                 }
                 // Almacenar el nombre del directorio
-                directories[dirCount] = strdup(findFileData.cFileName);
-                if (directories[dirCount] == NULL) {
+                files[fileCount] = strdup(findFileData.cFileName);
+                if (files[fileCount] == NULL) {
                     printf("Error duplicating folder's name\n");
                     FindClose(hFind);
                     *count = 0;
                     return NULL;
                 }
-                dirCount++;
+                fileCount++;
             }
         }
     } while (FindNextFile(hFind, &findFileData) != 0);
 
     FindClose(hFind);
-    *count = dirCount;
-    return directories;
+    *count = fileCount;
+    return files;
 }

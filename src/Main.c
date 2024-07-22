@@ -11,7 +11,7 @@ int main() {
     INPUT_RECORD irInBuf[128];
     DWORD cNumRead;
     UINT8 directoryCount = 0;
-    char** directories = listDirectories(".", &directoryCount);
+    char** directories = listFiles(".", &directoryCount, 1);
     UINT8 selectedMapIndex = -1;
     UINT8 selectedSiteIndex = -1;
     Config config;
@@ -56,16 +56,47 @@ int main() {
     if (config.vkCode == 0) {
         clearConsole();
         printPressKey();
-        config.vkCode = detectKeyPress();
+        config.vkCode = getNewKeyPress();
         saveConfig(&config);
     }
 
-    // Tomar las capturas de pantalla
-    makeScreenshot();
+    // Tomar la primera captura de pantalla
+    clearConsole();
+    printFirstScreenshot();
+    detectKeyPress(config.vkCode);
+    HBITMAP firstScreenshot = makeScreenshot();
 
+    // Tomar la segunda captura de pantalla
+    clearConsole();
+    printSecondScreenshot();
+    detectKeyPress(config.vkCode);
+    HBITMAP secondScreenshot = makeScreenshot();
+
+    // Tomar la tercera captura de pantalla
+    clearConsole();
+    printThirdScreenshot();
+    detectKeyPress(config.vkCode);
+    HBITMAP thirdScreenshot = makeScreenshot();
+
+    // Obtener el número de imágenes que ya existen en la carpeta con el mismo site
+    UINT8 imageCount = 0;
+    char** images = listFiles(directories[selectedMapIndex], &imageCount, 0);
+    UINT8 imageCountWithSameSite = 0;
+    for (int i = 0; i < imageCount; i++) {
+        if (strstr(images[i], SITES_ARRAY[selectedSiteIndex]) != NULL) imageCountWithSameSite++;
+    }
+
+    // Generar la imagen final
+    generateFinalImage(firstScreenshot, secondScreenshot, thirdScreenshot, directories[selectedMapIndex], SITES_ARRAY[selectedSiteIndex], imageCountWithSameSite + 1);
+
+    DeleteObject(thirdScreenshot);
+    DeleteObject(secondScreenshot);
+    DeleteObject(firstScreenshot);
     SetConsoleMode(hStdin, fdwSaveOldMode); // Restaurar el modo de entrada original antes de salir
     for (int i = 0; i < directoryCount; i++) free(directories[i]);
     free(directories);
+    for (int i = 0; i < imageCount; i++) free(images[i]);
+    free(images);
 
     return 0;
 }
@@ -78,9 +109,10 @@ int main() {
  * - [X] Al seleccionar un mapa, se debe guardar qué se seleccionó
  * - [X] Después de escoger un mapa, se debe elegir en qué parte del mapa se realizará el lineup (A, B, C u Other)
  * - [X] Si no está guardado en la config, se debe preguntar al usuario qué tecla utilizar para realizar la captura de pantalla y se guarda posteriormente en el archivo de configuración
- * - [ ] Una vez seleccionado el mapa y la parte, se pedirá al usuario que saque tres capturas de pantalla
- *       - [ ] La primera captura será mirar hacia dónde hay que colocarse
- *       - [ ] La segunda captura será mirar hacia dónde se debe lanzar la habilidad
- *       - [ ] La tercera captura será ver dónde cae la habilidad
- *       - [ ] Las capturas de pantalla NO se cogen del portapapeles; se detecta cuándo se presiona imprimir pantalla y entonces se procesa la pantalla (esto se hace porque si hay más de un monitor, el portapapeles tendrá la captura de todos los monitores)
+ * - [X] Una vez seleccionado el mapa y la parte, se pedirá al usuario que saque tres capturas de pantalla
+ *       - [X] La primera captura será mirar hacia dónde hay que colocarse
+ *       - [X] La segunda captura será mirar hacia dónde se debe lanzar la habilidad
+ *       - [X] La tercera captura será ver dónde cae la habilidad
+ *       - [X] Las capturas de pantalla NO se cogen del portapapeles; se detecta cuándo se presiona imprimir pantalla y entonces se procesa la pantalla (esto se hace porque si hay más de un monitor, el portapapeles tendrá la captura de todos los monitores)
+ * - [X] El nombre de la imagen final será el site seleccionado y el número de imagen (por ejemplo, "A_001.bmp")
  */
