@@ -1,6 +1,9 @@
 #include <windows.h>
 #include <stdio.h>
 #include "Functions.h"
+#include "Screenshot.h"
+#include "KeyboardHook.h"
+#include "Config.h"
 
 int main() {
     HANDLE hStdin;
@@ -11,6 +14,9 @@ int main() {
     char** directories = listDirectories(".", &directoryCount);
     UINT8 selectedMapIndex = -1;
     UINT8 selectedSiteIndex = -1;
+    Config config;
+
+    loadConfig(&config);
 
     SetConsoleOutputCP(CP_UTF8); // Habilitar la escritura de caracteres UTF-8
 
@@ -46,6 +52,17 @@ int main() {
     selectedSiteIndex = clickHandler(hStdin, irInBuf, cNumRead, 4);
     if (selectedSiteIndex < 0) { printf("Error handling click\n"); return 1; }
 
+    // Si no hay una tecla guardada en la configuración, preguntar al usuario qué tecla utilizar
+    if (config.vkCode == 0) {
+        clearConsole();
+        printPressKey();
+        config.vkCode = detectKeyPress();
+        saveConfig(&config);
+    }
+
+    // Tomar las capturas de pantalla
+    makeScreenshot();
+
     SetConsoleMode(hStdin, fdwSaveOldMode); // Restaurar el modo de entrada original antes de salir
     for (int i = 0; i < directoryCount; i++) free(directories[i]);
     free(directories);
@@ -56,10 +73,11 @@ int main() {
 /**
  * TODO list:
  * - [X] Detectar qué carpetas existen en el directorio actual para mostrarlas como opciones en el menú
- * - [ ] Si se detecta más de un monitor, se debe preguntar cuál es el monitor que se está utilizando para el Valorant (esto se pregunta al principio del programa y se guardará en un archivo de configuración)
+ * - [-] Si se detecta más de un monitor, se debe preguntar cuál es el monitor que se está utilizando para el Valorant (esto se pregunta al principio del programa y se guardará en un archivo de configuración)
+ *       - REMOVED: No es necesario ya que automáticamente se detecta el monitor principal y de forma general, se asume que el monitor principal es el que se utiliza para jugar
  * - [X] Al seleccionar un mapa, se debe guardar qué se seleccionó
  * - [X] Después de escoger un mapa, se debe elegir en qué parte del mapa se realizará el lineup (A, B, C u Other)
- * - [ ] Si no está guardado en la config, se debe preguntar al usuario qué tecla utilizar para realizar la captura de pantalla y se guarda posteriormente en el archivo de configuración
+ * - [X] Si no está guardado en la config, se debe preguntar al usuario qué tecla utilizar para realizar la captura de pantalla y se guarda posteriormente en el archivo de configuración
  * - [ ] Una vez seleccionado el mapa y la parte, se pedirá al usuario que saque tres capturas de pantalla
  *       - [ ] La primera captura será mirar hacia dónde hay que colocarse
  *       - [ ] La segunda captura será mirar hacia dónde se debe lanzar la habilidad

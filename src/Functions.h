@@ -8,6 +8,7 @@ const char* SITES_ARRAY[] = SITES_ARRAY_DEFINITION;
 typedef int (*FuncPtr)(int, int, UINT8);
 
 // Mover el cursor a una posición específica en la consola
+//! Función interna
 void movePointer(int x, int y) {
     COORD coord;
     coord.X = x;
@@ -41,6 +42,12 @@ void printSite() {
     printf("4. Other");
 }
 
+void printPressKey() {
+    movePointer(0, 0);
+    printf("Press the key you want to use to take a screenshot");
+}
+
+//! Función interna
 int handleClick(int x, int y, UINT8 count) {
     for (UINT8 i = 0; i < count; i++) {
         if (x >= 0 && x <= 30 && y == i + OPTIONS_HEIGHT) {
